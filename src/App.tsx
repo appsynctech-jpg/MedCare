@@ -9,6 +9,7 @@ import { lazy, Suspense } from "react";
 import { Loader2 } from "lucide-react";
 import PWABadge from './components/pwa/PWABadge';
 import { MedicationAlarmProvider } from "@/providers/MedicationAlarmProvider";
+import { PanicShortcutListener } from "@/components/emergency/PanicShortcutListener";
 
 const Login = lazy(() => import("./pages/Login"));
 const Register = lazy(() => import("./pages/Register"));
@@ -41,6 +42,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <MedicationAlarmProvider>
+            <PanicShortcutListener />
             <BrowserRouter>
               <Suspense fallback={<Loading />}>
                 <Routes>

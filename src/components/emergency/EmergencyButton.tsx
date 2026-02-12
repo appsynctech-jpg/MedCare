@@ -1,61 +1,21 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { usePanic } from '@/hooks/usePanic';
 
 export function EmergencyButton() {
   const [open, setOpen] = useState(false);
   const [countdown, setCountdown] = useState(3);
   const [triggered, setTriggered] = useState(false);
   const { user } = useAuth();
-  const { toast } = useToast();
+  const { triggerPanic } = usePanic();
 
-  const triggerEmergency = useCallback(async () => {
+  const handleTrigger = async () => {
     setTriggered(true);
-    let lat: number | null = null;
-    let lng: number | null = null;
-
-    try {
-      const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true, // Forces usage of GPS if available
-          timeout: 10000,           // Increased to 10s to give more time for precision
-          maximumAge: 0             // Do not use cached location
-        })
-      );
-      lat = pos.coords.latitude;
-      lng = pos.coords.longitude;
-    } catch (error) {
-      console.warn('Location precision error:', error);
-      /* location unavailable or timeout - fallback logic could be here */
-    }
-
-    if (user) {
-      const { data: logRecord, error: logError } = await supabase.from('panic_logs').insert({
-        user_id: user.id,
-        latitude: lat,
-        longitude: lng,
-        message: 'Preciso de ajuda urgente!',
-        contacts_notified: [],
-      }).select().single();
-
-      if (!logError && logRecord) {
-        // Trigger security alert function
-        await supabase.functions.invoke('send-security-alert', {
-          body: {
-            type: 'INSERT',
-            table: 'panic_logs',
-            record: logRecord
-          }
-        });
-      }
-    }
-
-    toast({ title: '🚨 Ajuda acionada!', description: 'Seus contatos de emergência foram notificados.' });
-  }, [user, toast]);
+    await triggerPanic();
+  };
 
   useEffect(() => {
     if (!open) {
@@ -66,13 +26,13 @@ export function EmergencyButton() {
     if (triggered) return;
 
     if (countdown <= 0) {
-      triggerEmergency();
+      handleTrigger();
       return;
     }
 
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
     return () => clearTimeout(timer);
-  }, [open, countdown, triggered, triggerEmergency]);
+  }, [open, countdown, triggered]);
 
   return (
     <>
