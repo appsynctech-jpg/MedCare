@@ -41,7 +41,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <MedicationAlarmProvider>
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <BrowserRouter>
               <Suspense fallback={<Loading />}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/dashboard" replace />} />
