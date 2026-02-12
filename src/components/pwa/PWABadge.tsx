@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import './PWABadge.css';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 
@@ -19,6 +20,15 @@ function PWABadge() {
         setOfflineReady(false);
         setNeedRefresh(false);
     };
+
+    useEffect(() => {
+        if (offlineReady) {
+            const timer = setTimeout(() => {
+                setOfflineReady(false);
+            }, 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [offlineReady]);
 
     return (
         <div className="PWABadge" role="alert" aria-labelledby="toast-desc">
