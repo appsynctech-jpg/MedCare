@@ -134,7 +134,7 @@ export default function Medications() {
     }
     setSaving(true);
     try {
-      const photoUrl = photoPreview;
+      let photoUrl = photoPreview;
       if (photoFile && targetUserId) {
         const path = `${targetUserId}/med_${Date.now()}_${photoFile.name}`;
         const { error: upErr } = await supabase.storage.from('medical-documents').upload(path, photoFile);
