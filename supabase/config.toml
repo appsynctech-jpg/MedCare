@@ -1,0 +1,7 @@
+project_id = "bymwydmgiknaphkvggna"
+
+[functions.create-share-link]
+verify_jwt = false
+
+[functions.get-shared-data]
+verify_jwt = false
