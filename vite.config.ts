@@ -1,7 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import { VitePWA } from 'vite-plugin-pwa';
+import { fileURLToPath } from "url";
+import { VitePWA } from "vite-plugin-pwa";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -12,39 +16,39 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.png', 'MedCare.png', 'Logo.png'],
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.png", "MedCare.png", "Logo.png"],
       manifest: {
-        name: 'MedCare - Saúde Digital',
-        short_name: 'MedCare',
-        description: 'Seu assistente pessoal de saúde digital',
-        theme_color: '#4F46E5',
-        background_color: '#ffffff',
-        display: 'standalone',
+        name: "MedCare - Saúde Digital",
+        short_name: "MedCare",
+        description: "Seu assistente pessoal de saúde digital",
+        theme_color: "#4F46E5",
+        background_color: "#ffffff",
+        display: "standalone",
         icons: [
           {
-            src: 'MedCare.png',
-            sizes: '192x192',
-            type: 'image/png'
+            src: "MedCare.png",
+            sizes: "192x192",
+            type: "image/png",
           },
           {
-            src: 'MedCare.png',
-            sizes: '512x512',
-            type: 'image/png'
+            src: "MedCare.png",
+            sizes: "512x512",
+            type: "image/png",
           },
           {
-            src: 'favicon.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ]
-      }
-    })
+            src: "favicon.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
+          },
+        ],
+      },
+    }),
   ],
   resolve: {
     alias: {
-      "@": path.resolve(path.dirname(new URL(import.meta.url).pathname), "./src"),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
 }));

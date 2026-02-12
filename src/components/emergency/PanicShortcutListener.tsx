@@ -7,8 +7,8 @@ export function PanicShortcutListener() {
     const { triggerPanic } = usePanic();
     const [holding, setHolding] = useState(false);
     const [progress, setProgress] = useState(0);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<any>(null);
+    const progressIntervalRef = useRef<any>(null);
 
     useEffect(() => {
         if (!user) return;
