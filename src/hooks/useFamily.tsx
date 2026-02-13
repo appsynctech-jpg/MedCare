@@ -17,6 +17,7 @@ interface FamilyContextType {
     dismissPanicAlert: () => void;
     realtimeConnected: boolean;
     refreshFamily: () => Promise<void>;
+    addDependent: (fullName: string) => Promise<any>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -65,13 +66,12 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         if (!user) return;
 
-        // Use a persistent channel name for the user
-        const channelId = `panic_alerts_${user.id}`;
-
-        console.log('🏗️ Iniciando subscrição Realtime:', channelId);
+        // Simplified and persistent channel name
+        const channelName = `sos_monitor_${user.id.slice(0, 8)}`;
+        console.log('🏗️ [Realtime] Iniciando subscrição:', channelName);
 
         const channel = supabase
-            .channel(channelId)
+            .channel(channelName)
             .on(
                 'postgres_changes',
                 {
@@ -80,81 +80,81 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     table: 'panic_logs'
                 },
                 async (payload) => {
-                    console.log('🔔 EVENTO REALTIME RECEBIDO:', payload);
+                    console.log('🚨 [Realtime] EVENTO RECEBIDO:', payload);
                     const newPanic = payload.new;
-
                     const relation = relationshipsRef.current.find(r => r.patient_id === newPanic.user_id);
 
                     if (relation) {
                         const patientName = relation.profiles?.full_name || 'Um familiar';
-                        console.log('🚨 ALERTA VÁLIDO ENCONTRADO PARA:', patientName);
                         setActivePanicAlert({ ...newPanic, patientName });
 
-                        // Browser Notification
                         if (!Capacitor.isNativePlatform() && Notification.permission === 'granted') {
                             new Notification(`🚨 EMERGÊNCIA: ${patientName}`, {
-                                body: 'Acionou o botão de pânico! Verifique agora.',
+                                body: 'Acionou o botão de pânico!',
                                 icon: '/MedCare.png'
                             });
                         }
 
-                        // Native Notification (Mobile) - High Priority
                         if (Capacitor.isNativePlatform()) {
-                            const sendNative = async () => {
-                                await LocalNotifications.createChannel({
-                                    id: 'sos-alerts',
-                                    name: 'Alertas de Emergência',
-                                    description: 'Alertas críticos de pânico',
-                                    importance: 5,
-                                    visibility: 1,
-                                    vibration: true
-                                });
-
-                                await LocalNotifications.schedule({
-                                    notifications: [
-                                        {
-                                            title: `🚨 EMERGÊNCIA: ${patientName}`,
-                                            body: 'Acionou o botão de pânico! Verifique agora.',
-                                            id: Date.now(),
-                                            schedule: { at: new Date(Date.now() + 500) },
-                                            sound: 'resource://raw/emergency_siren',
-                                            channelId: 'sos-alerts',
-                                            smallIcon: 'ic_stat_name',
-                                        }
-                                    ]
-                                });
-                            };
-                            sendNative();
+                            LocalNotifications.schedule({
+                                notifications: [{
+                                    title: `🚨 EMERGÊNCIA: ${patientName}`,
+                                    body: 'Acionou o botão de pânico!',
+                                    id: Date.now(),
+                                    schedule: { at: new Date(Date.now() + 500) },
+                                    channelId: 'sos-alerts'
+                                }]
+                            });
                         }
                     }
                 }
             )
-            .subscribe((status) => {
-                console.log(`📡 [${channelId}] Status:`, status);
+            .subscribe((status, err) => {
+                console.log(`📡 [Realtime] Status do canal ${channelName}:`, status);
+                if (err) console.error('❌ [Realtime] Erro na subscrição:', err);
 
                 if (status === 'SUBSCRIBED') {
                     setRealtimeConnected(true);
                     setRetryCount(0);
                 } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                     setRealtimeConnected(false);
-                    console.error(`❌ Erro no canal ${channelId}:`, status);
 
-                    if (user && retryCount < 10) {
-                        const timeout = Math.min(2000 * Math.pow(1.5, retryCount), 15000);
-                        setTimeout(() => {
-                            setRetryCount(prev => prev + 1);
-                        }, timeout);
+                    // Controlled retry logic without re-triggering the entire effect if possible
+                    if (retryCount < 5) {
+                        console.warn(`🔄 [Realtime] Tentando reconectar (${retryCount + 1}/5)...`);
+                        const timer = setTimeout(() => setRetryCount(prev => prev + 1), 3000);
+                        return () => clearTimeout(timer);
                     }
                 }
             });
 
         return () => {
-            console.log('🧹 Desconectando canal:', channelId);
+            console.log('🧹 [Realtime] Desconectando:', channelName);
             supabase.removeChannel(channel);
         };
     }, [user?.id, retryCount]);
 
     const isCaregiverMode = !!selectedPatient;
+
+    const addDependent = async (fullName: string) => {
+        if (!user) return null;
+        try {
+            console.log('👶 Criando dependente:', fullName);
+            const { data, error } = await supabase.rpc('create_managed_profile', {
+                profile_name: fullName,
+                manager_id: user.id
+            });
+
+            if (error) throw error;
+
+            console.log('✅ Dependente criado, recarregando vínculos...');
+            await fetchRelationships();
+            return data;
+        } catch (error) {
+            console.error('Erro ao adicionar dependente:', error);
+            throw error;
+        }
+    };
 
     return (
         <FamilyContext.Provider value={{
@@ -167,7 +167,8 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             activePanicAlert,
             realtimeConnected,
             dismissPanicAlert: () => setActivePanicAlert(null),
-            refreshFamily: fetchRelationships
+            refreshFamily: fetchRelationships,
+            addDependent
         }}>
             {children}
         </FamilyContext.Provider>

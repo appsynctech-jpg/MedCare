@@ -87,17 +87,25 @@ export function AppSidebar() {
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuLabel>Familiares</DropdownMenuLabel>
-                    {relationships.map((rel) => (
-                      <DropdownMenuItem key={rel.id} onClick={() => handlePatientSelect((rel as any).profiles)} className="gap-2">
-                        <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary uppercase">
-                          {(rel as any).profiles?.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{(rel as any).profiles?.full_name}</span>
-                          <span className="text-[10px] text-muted-foreground uppercase">Paciente</span>
-                        </div>
-                      </DropdownMenuItem>
-                    ))}
+                    {relationships.map((rel) => {
+                      const profile = (rel as any).profiles;
+                      // Fallback for is_managed in case it is not yet in the types or cached
+                      const isManaged = profile?.is_managed === true;
+
+                      return (
+                        <DropdownMenuItem key={rel.id} onClick={() => handlePatientSelect(profile)} className="gap-2">
+                          <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center font-bold text-[10px] text-primary uppercase">
+                            {profile?.full_name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('')}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-medium truncate max-w-[120px]">{profile?.full_name}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase">
+                              {isManaged ? 'Dependente' : 'Paciente'}
+                            </span>
+                          </div>
+                        </DropdownMenuItem>
+                      );
+                    })}
                   </>
                 )}
               </DropdownMenuContent>

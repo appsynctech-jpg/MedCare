@@ -5,7 +5,7 @@ import { AdherenceReports } from '@/components/medications/AdherenceReports';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -58,6 +58,7 @@ export default function Medications() {
   // Form state
   const [name, setName] = useState('');
   const [dosage, setDosage] = useState('');
+  const [doseAmount, setDoseAmount] = useState('');
   const [form, setForm] = useState('comprimido');
   const [manufacturer, setManufacturer] = useState('');
   const [frequency, setFrequency] = useState(1);
@@ -99,7 +100,7 @@ export default function Medications() {
   };
 
   const resetForm = () => {
-    setName(''); setDosage(''); setForm('comprimido'); setManufacturer('');
+    setName(''); setDosage(''); setDoseAmount(''); setForm('comprimido'); setManufacturer('');
     setFrequency(1); setSchedules(['08:00']); setStock(0);
     setStartDate(new Date().toISOString().split('T')[0]); setEndDate('');
     setContinuous(true); setInstructions('');
@@ -112,6 +113,7 @@ export default function Medications() {
     setSelectedMedId(med.id);
     setName(med.name);
     setDosage(med.dosage);
+    setDoseAmount(med.dose_amount || '');
     setForm(med.form || 'comprimido');
     setManufacturer(med.manufacturer || '');
     setFrequency(med.daily_frequency);
@@ -150,6 +152,7 @@ export default function Medications() {
         start_date: startDate, end_date: continuous ? null : endDate || null,
         instructions: instructions || null,
         photo_url: photoUrl,
+        dose_amount: doseAmount || null,
       };
 
       let medId = selectedMedId;
@@ -280,6 +283,9 @@ export default function Medications() {
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{isEditing ? 'Editar Medicamento' : 'Novo Medicamento'}</DialogTitle>
+              <DialogDescription>
+                Preencha os dados do medicamento abaixo. Clique em salvar quando terminar.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -288,10 +294,21 @@ export default function Medications() {
                   <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex: Paracetamol" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Dosagem *</Label>
+                  <Label>Dosagem (Concentração) *</Label>
                   <Input value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ex: 500mg" />
                 </div>
               </div>
+
+              {(form === 'xarope' || form === 'gotas' || form === 'injecao') && (
+                <div className="space-y-2">
+                  <Label>Quantidade por dose *</Label>
+                  <Input
+                    value={doseAmount}
+                    onChange={(e) => setDoseAmount(e.target.value)}
+                    placeholder={form === 'gotas' ? "Ex: 20 gotas" : "Ex: 5ml"}
+                  />
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Forma</Label>

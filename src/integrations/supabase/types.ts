@@ -453,6 +453,7 @@ export type Database = {
           created_at: string | null
           daily_frequency: number
           dosage: string
+          dose_amount: string | null
           end_date: string | null
           form: string | null
           id: string
@@ -470,6 +471,7 @@ export type Database = {
           created_at?: string | null
           daily_frequency: number
           dosage: string
+          dose_amount?: string | null
           end_date?: string | null
           form?: string | null
           id?: string
@@ -487,6 +489,7 @@ export type Database = {
           created_at?: string | null
           daily_frequency?: number
           dosage?: string
+          dose_amount?: string | null
           end_date?: string | null
           form?: string | null
           id?: string
@@ -670,7 +673,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_managed_profile: {
+        Args: {
+          profile_name: string
+          manager_id: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

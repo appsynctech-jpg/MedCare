@@ -16,12 +16,14 @@ export function AdherenceReports({ userId }: { userId: string }) {
             const [logsRes, snoozesRes] = await Promise.all([
                 supabase
                     .from('medication_logs')
-                    .select('*, medications(*)')
+                    .select('*, medications!inner(*)')
+                    .eq('medications.user_id', userId)
                     .order('scheduled_time', { ascending: false })
                     .limit(100),
                 supabase
                     .from('medication_snoozes')
                     .select('*, medications(*), medication_schedules(*)')
+                    .eq('user_id', userId)
                     .order('created_at', { ascending: false })
             ]);
 

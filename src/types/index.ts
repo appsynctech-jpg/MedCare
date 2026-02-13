@@ -30,6 +30,7 @@ export interface Medication {
   active: boolean;
   created_at: string;
   updated_at: string;
+  dose_amount: string | null;
   medication_schedules?: MedicationSchedule[];
 }
 

@@ -121,7 +121,11 @@ export const MedicationAlarmProvider: React.FC<{ children: React.ReactNode }> = 
 
         const [medsRes, logsRes] = await Promise.all([
             supabase.from('medications').select('*, medication_schedules(*)').eq('user_id', targetUserId),
-            supabase.from('medication_logs').select('*').gte('scheduled_time', start.toISOString()).lte('scheduled_time', end.toISOString())
+            supabase.from('medication_logs')
+                .select('*, medications!inner(user_id)')
+                .eq('medications.user_id', targetUserId)
+                .gte('scheduled_time', start.toISOString())
+                .lte('scheduled_time', end.toISOString())
         ]);
 
         if (medsRes.data) {
@@ -224,6 +228,16 @@ export const MedicationAlarmProvider: React.FC<{ children: React.ReactNode }> = 
                 const scheduleTime = schedule.time.slice(0, 5); // HH:mm
 
                 if (scheduleTime <= currentMinute) {
+                    const [schedHour, schedMinute] = scheduleTime.split(':').map(Number);
+                    const schedDate = new Date();
+                    schedDate.setHours(schedHour, schedMinute, 0, 0);
+
+                    // If the alarm is more than 60 minutes old, don't ring anymore (it's missed)
+                    const diffMs = now.getTime() - schedDate.getTime();
+                    const diffMins = diffMs / 1000 / 60;
+
+                    if (diffMins > 60) return;
+
                     const isAlreadyTaken = todayLogs.some(l => l.schedule_id === schedule.id && (l.status === 'confirmed' || l.status === 'skipped'));
                     if (isAlreadyTaken) return;
 

@@ -12,9 +12,11 @@ import { Share2, Copy, Loader2, Check } from 'lucide-react';
 
 interface ShareModalProps {
   trigger?: React.ReactNode;
+  profileId?: string;
+  profileName?: string;
 }
 
-export function ShareModal({ trigger }: ShareModalProps) {
+export function ShareModal({ trigger, profileId, profileName }: ShareModalProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -52,6 +54,7 @@ export function ShareModal({ trigger }: ShareModalProps) {
           permissions: { medications, appointments, documents },
           access_level: accessLevel,
           duration_days: parseInt(duration),
+          profile_id: profileId,
         },
       });
       if (error) throw error;
@@ -82,9 +85,9 @@ export function ShareModal({ trigger }: ShareModalProps) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Compartilhar Dados Médicos</DialogTitle>
+          <DialogTitle>Compartilhar Dados {profileName ? `de ${profileName}` : 'Médicos'}</DialogTitle>
           <DialogDescription>
-            Gere um link temporário para permitir que médicos ou familiares acessem seus registros de saúde.
+            Gere um link temporário para permitir que médicos ou familiares acessem {profileName ? `os registros de ${profileName}` : 'seus registros de saúde'}.
           </DialogDescription>
         </DialogHeader>
 

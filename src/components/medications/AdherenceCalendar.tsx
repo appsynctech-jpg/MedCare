@@ -21,7 +21,8 @@ export function AdherenceCalendar({ userId, externalLogs }: { userId?: string, e
 
         const { data, error } = await supabase
             .from('medication_logs')
-            .select('*, medications(name)')
+            .select('*, medications!inner(name, user_id)')
+            .eq('medications.user_id', userId)
             .gte('scheduled_time', start)
             .lte('scheduled_time', end);
 

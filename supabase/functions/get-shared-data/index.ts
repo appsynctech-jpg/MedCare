@@ -40,18 +40,18 @@ serve(async (req) => {
       return new Response(JSON.stringify({ error: 'Link expirado' }), { status: 410, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
-    const userId = share.user_id
+    const targetId = share.profile_id || share.user_id
     const perms = share.permissions as Record<string, boolean>
     const result: Record<string, unknown> = {}
 
-    // Get owner name
-    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', userId).single()
+    // Get owner/profile name
+    const { data: profile } = await supabase.from('profiles').select('full_name').eq('id', targetId).single()
     result.owner_name = profile?.full_name || 'Usuário'
     result.expires_at = share.expires_at
     result.access_level = share.access_level
 
     if (perms.medications) {
-      const { data: medications } = await supabase.from('medications').select('*, medication_schedules(*)').eq('user_id', userId).eq('active', true)
+      const { data: medications } = await supabase.from('medications').select('*, medication_schedules(*)').eq('user_id', targetId).eq('active', true)
       result.medications = medications || []
 
       // Buscar logs de adesão (últimos 30 dias por padrão)
@@ -61,7 +61,7 @@ serve(async (req) => {
       const { data: logs } = await supabase
         .from('medication_logs')
         .select('*, medications!inner(name, user_id)')
-        .eq('medications.user_id', userId)
+        .eq('medications.user_id', targetId)
         .gte('scheduled_time', startDate.toISOString())
         .order('scheduled_time', { ascending: false })
 
@@ -69,12 +69,12 @@ serve(async (req) => {
     }
 
     if (perms.appointments) {
-      const { data } = await supabase.from('appointments').select('*, doctors(*)').eq('user_id', userId).gte('appointment_date', new Date().toISOString()).order('appointment_date')
+      const { data } = await supabase.from('appointments').select('*, doctors(*)').eq('user_id', targetId).gte('appointment_date', new Date().toISOString()).order('appointment_date')
       result.appointments = data || []
     }
 
     if (perms.documents) {
-      const { data } = await supabase.from('medical_documents').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+      const { data } = await supabase.from('medical_documents').select('*').eq('user_id', targetId).order('created_at', { ascending: false })
       result.documents = data || []
     }
 

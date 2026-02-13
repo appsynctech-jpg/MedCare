@@ -7,9 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
+import { useFamily } from '@/hooks/useFamily';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Sun, Moon, Monitor, User, Share2, XCircle, RefreshCw } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sun, Moon, Monitor, User, Share2, XCircle, RefreshCw, UserPlus } from 'lucide-react';
 import { ShareModal } from '@/components/sharing/ShareModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -18,14 +19,19 @@ import type { Profile, EmergencyContact, SharedAccess, CaregiverRelationship } f
 export default function Settings() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const {
+    relationships,
+    loading: loadingFamily,
+    refreshFamily,
+    addDependent
+  } = useFamily();
+
   const [profile, setProfile] = useState<Profile | null>(null);
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [shares, setShares] = useState<SharedAccess[]>([]);
-  const [relationships, setRelationships] = useState<CaregiverRelationship[]>([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [loadingContacts, setLoadingContacts] = useState(true);
   const [loadingShares, setLoadingShares] = useState(true);
-  const [loadingFamily, setLoadingFamily] = useState(true);
   const [saving, setSaving] = useState(false);
 
   // Profile form
@@ -49,6 +55,8 @@ export default function Settings() {
   // Family invite form
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
+  const [dependentName, setDependentName] = useState('');
+  const [addingDependent, setAddingDependent] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -77,27 +85,18 @@ export default function Settings() {
     };
 
     const fetchShares = async () => {
-      const { data } = await supabase.from('shared_access').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+      const { data } = await supabase
+        .from('shared_access')
+        .select('*, profiles!shared_access_profile_id_fkey(full_name)')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
       setShares((data as any) || []);
       setLoadingShares(false);
-    };
-
-    const fetchFamily = async () => {
-      // Fetch where I am patient OR where I am caregiver
-      const { data } = await supabase
-        .from('caregiver_relationships')
-        .select('*, profiles:patient_id(full_name, email, phone)')
-        .or(`patient_id.eq.${user.id},caregiver_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
-
-      setRelationships((data as any) || []);
-      setLoadingFamily(false);
     };
 
     fetchProfile();
     fetchContacts();
     fetchShares();
-    fetchFamily();
   }, [user]);
 
   const applyTheme = (t: string) => {
@@ -157,6 +156,29 @@ export default function Settings() {
     toast({ title: 'Compartilhamento revogado' });
   };
 
+  const handleAddDependent = async () => {
+    if (!dependentName.trim()) return;
+
+    try {
+      setAddingDependent(true);
+      await addDependent(dependentName);
+      toast({
+        title: "Perfil criado!",
+        description: `O perfil de ${dependentName} foi adicionado com sucesso.`,
+      });
+      setDependentName('');
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Erro ao criar perfil",
+        description: "Não foi possível criar o perfil do dependente.",
+      });
+    } finally {
+      setAddingDependent(false);
+    }
+  };
+
   const inviteCaregiver = async () => {
     if (!user || !inviteEmail) return;
     setInviting(true);
@@ -188,11 +210,7 @@ export default function Settings() {
       toast({ title: 'Convite enviado!', description: 'Seu familiar deve aceitar o vínculo no painel dele.' });
       setInviteEmail('');
       // Refresh list
-      const { data } = await supabase
-        .from('caregiver_relationships')
-        .select('*, profiles:patient_id(full_name, email, phone)')
-        .or(`patient_id.eq.${user.id},caregiver_id.eq.${user.id}`);
-      setRelationships((data as any) || []);
+      await refreshFamily();
     } catch (e: any) {
       toast({ variant: 'destructive', title: 'Erro ao enviar convite', description: e.message });
     } finally {
@@ -202,7 +220,7 @@ export default function Settings() {
 
   const updateRelationship = async (id: string, status: 'accepted' | 'rejected') => {
     await supabase.from('caregiver_relationships').update({ status }).eq('id', id);
-    setRelationships(relationships.map(r => r.id === id ? { ...r, status } : r));
+    await refreshFamily();
     toast({ title: status === 'accepted' ? 'Vínculo aceito!' : 'Vínculo rejeitado' });
   };
 
@@ -212,7 +230,7 @@ export default function Settings() {
       toast({ variant: 'destructive', title: 'Erro ao remover', description: error.message });
       return;
     }
-    setRelationships(relationships.filter(r => r.id !== id));
+    await refreshFamily();
     toast({ title: 'Vínculo/Convite removido' });
   };
 
@@ -350,7 +368,29 @@ export default function Settings() {
 
         <TabsContent value="family" className="space-y-4 mt-4">
           <Card>
-            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Plus className="h-5 w-5" /> Convidar Familiar</CardTitle></CardHeader>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><UserPlus className="h-5 w-5" /> Adicionar Dependente (Filhos/Pais)</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <div className="flex-1 space-y-2">
+                  <Label>Nome Completo</Label>
+                  <Input
+                    placeholder="Ex: Maria Luiza"
+                    value={dependentName}
+                    onChange={(e) => setDependentName(e.target.value)}
+                  />
+                </div>
+                <Button className="self-end" onClick={handleAddDependent} disabled={addingDependent || !dependentName.trim()}>
+                  {addingDependent ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Perfil'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Perfis de dependentes são gerenciados por você. Alertas e dados ficarão disponíveis na sua conta.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Plus className="h-5 w-5" /> Convidar Familiar (Conta Existente)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <div className="flex-1 space-y-2">
@@ -422,6 +462,17 @@ export default function Settings() {
                             <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => deleteRelationship(r.id)} title="Excluir">
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                          )}
+                          {!isPatient && r.status === 'accepted' && (
+                            <ShareModal
+                              trigger={
+                                <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" title="Compartilhar Perfil">
+                                  <Share2 className="h-4 w-4" />
+                                </Button>
+                              }
+                              profileId={r.patient_id}
+                              profileName={targetName}
+                            />
                           )}
                         </div>
                       </div>
@@ -505,7 +556,10 @@ export default function Settings() {
                     return (
                       <div key={s.id} className="flex items-center justify-between rounded-lg border p-3">
                         <div className="space-y-1">
-                          <p className="font-medium text-sm">{s.shared_with_email}</p>
+                          <p className="font-medium text-sm">
+                            {s.shared_with_email}
+                            {(s as any).profiles?.full_name && <span className="text-muted-foreground ml-2">({(s as any).profiles.full_name})</span>}
+                          </p>
                           <div className="flex gap-1 flex-wrap">
                             {(s.permissions as any)?.medications && <Badge variant="outline" className="text-xs">Medicamentos</Badge>}
                             {(s.permissions as any)?.appointments && <Badge variant="outline" className="text-xs">Consultas</Badge>}
