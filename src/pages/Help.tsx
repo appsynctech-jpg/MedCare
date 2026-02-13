@@ -19,10 +19,12 @@ const guides = [
         icon: Pill,
         color: 'text-blue-400',
         steps: [
-            'Toque no botão "+" na tela inicial ou aba de medicamentos.',
-            'Escaneie a caixa do remédio ou digite o nome manualmente.',
-            'Defina a frequência (ex: 8 em 8 horas) e a duração.',
-            'Para xaropes e gotas, o controle de estoque é automático.'
+            'Na tela inicial ou na aba "Medicamentos", procure e toque no botão "+" ou "Adicionar Medicamento".',
+            'Você pode usar a câmera para escanear a caixa do remédio ou digitar o nome manualmente no campo indicado.',
+            'Preencha a dosagem (ex: 500mg) e a forma farmacêutica (comprimido, xarope, etc).',
+            'Defina a frequência de uso (ex: de 8 em 8 horas) e configure os horários das doses.',
+            'Para medicamentos contínuos, marque a opção "Uso contínuo". Para tratamentos com data de fim, selecione a data de término.',
+            'O sistema calcula automaticamente o estoque e avisa quando estiver acabando (exceto para líquidos).'
         ]
     },
     {
@@ -31,10 +33,12 @@ const guides = [
         icon: Share2,
         color: 'text-purple-400',
         steps: [
-            'Vá em Configurações > Família.',
-            'Escolha o perfil do dependente que deseja compartilhar.',
-            'Toque no ícone de compartilhamento ao lado do nome.',
-            'Defina o tempo de acesso (ex: 24 horas ou 7 dias) e envie o link.'
+            'Acesse o menu de "Configurações" e vá até a aba "Família".',
+            'Localize o perfil do dependente que você deseja compartilhar na lista.',
+            'Toque no ícone de compartilhamento (seta) ao lado do nome do dependente.',
+            'Escolha quais informações deseja compartilhar (Medicações, Consultas, etc).',
+            'Defina a validade do link (ex: 24 horas, 7 dias ou acesso permanente) e gere o link.',
+            'Envie o link gerado via WhatsApp ou E-mail para o cuidador ou médico.'
         ]
     },
     {
@@ -43,9 +47,10 @@ const guides = [
         icon: AlertTriangle,
         color: 'text-red-400',
         steps: [
-            'Em caso de emergência, pressione o botão vermelho na tela inicial.',
-            'Seus contatos de emergência receberão um alerta SMS/WhatsApp.',
-            'Sua localização atual será enviada em tempo real.'
+            'O botão de pânico está localizado no topo da tela inicial (ícone de alerta vermelho).',
+            'Em caso de emergência, mantenha o botão pressionado por alguns segundos.',
+            'O sistema enviará automaticamente um alerta para seus contatos de emergência cadastrados.',
+            'A mensagem incluirá sua localização atual em tempo real para facilitar o socorro.'
         ]
     },
     {
@@ -54,10 +59,10 @@ const guides = [
         icon: UserPlus,
         color: 'text-green-400',
         steps: [
-            'Acesse Configurações > Perfil.',
-            'Clique em "Adicionar Dependente".',
-            'Preencha os dados básicos (Nome, Data de Nascimento).',
-            'Agora você pode gerenciar os remédios dele separadamente.'
+            'Vá até "Configurações" e selecione a seção "Perfil" ou "Família".',
+            'Clique no botão "Adicionar Dependente" ou "Novo Perfil".',
+            'Insira as informações básicas: Nome completo, Data de Nascimento e relação de parentesco.',
+            'Após salvar, você poderá alternar entre os perfis no menu lateral para gerenciar os medicamentos de cada um individualmente.'
         ]
     }
 ];
@@ -81,7 +86,7 @@ export default function Help() {
                     Como podemos ajudar?
                 </h1>
                 <p className="text-muted-foreground text-lg">
-                    Explore nossos guias interativos para aproveitar o máximo do MedCare.
+                    Explore nossos guias detalhados para aproveitar o máximo do MedCare.
                 </p>
 
                 {/* Neo-Tactile Search */}
@@ -141,14 +146,11 @@ export default function Help() {
                                             >
                                                 <div className="pt-4 space-y-4 border-t border-white/10 mt-4">
                                                     {guide.steps.map((step, i) => (
-                                                        <div key={i} className="flex gap-3 text-muted-foreground">
+                                                        <div key={i} className="flex gap-3 text-muted-foreground items-start">
                                                             <CheckCircle2 className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                                                            <p>{step}</p>
+                                                            <p className="leading-relaxed">{step}</p>
                                                         </div>
                                                     ))}
-                                                    <div className="pt-2">
-                                                        <NeoButton className="w-full text-sm py-2">Ver Tutorial Completo</NeoButton>
-                                                    </div>
                                                 </div>
                                             </motion.div>
                                         )}
@@ -159,8 +161,6 @@ export default function Help() {
                     ))}
                 </AnimatePresence>
             </div>
-
-
         </div>
     );
 }

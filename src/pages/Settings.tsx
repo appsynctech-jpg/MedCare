@@ -56,6 +56,8 @@ export default function Settings() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviting, setInviting] = useState(false);
   const [dependentName, setDependentName] = useState('');
+  const [dependentBirthDate, setDependentBirthDate] = useState('');
+  const [dependentRelationship, setDependentRelationship] = useState('');
   const [addingDependent, setAddingDependent] = useState(false);
 
   useEffect(() => {
@@ -161,12 +163,14 @@ export default function Settings() {
 
     try {
       setAddingDependent(true);
-      await addDependent(dependentName);
+      await addDependent(dependentName, dependentBirthDate || undefined, dependentRelationship || undefined);
       toast({
         title: "Perfil criado!",
         description: `O perfil de ${dependentName} foi adicionado com sucesso.`,
       });
       setDependentName('');
+      setDependentBirthDate('');
+      setDependentRelationship('');
     } catch (error) {
       console.error(error);
       toast({
@@ -370,16 +374,34 @@ export default function Settings() {
           <Card>
             <CardHeader><CardTitle className="text-lg flex items-center gap-2"><UserPlus className="h-5 w-5" /> Adicionar Dependente (Filhos/Pais)</CardTitle></CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <div className="flex-1 space-y-2">
-                  <Label>Nome Completo</Label>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome do dependente</Label>
                   <Input
-                    placeholder="Ex: Maria Luiza"
+                    placeholder="Ex: João Silva"
                     value={dependentName}
                     onChange={(e) => setDependentName(e.target.value)}
                   />
                 </div>
-                <Button className="self-end" onClick={handleAddDependent} disabled={addingDependent || !dependentName.trim()}>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Data de Nascimento (opcional)</Label>
+                    <Input
+                      type="date"
+                      value={dependentBirthDate}
+                      onChange={(e) => setDependentBirthDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Relação (opcional)</Label>
+                    <Input
+                      placeholder="Ex: Filho, Mãe, Avô"
+                      value={dependentRelationship}
+                      onChange={(e) => setDependentRelationship(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <Button onClick={handleAddDependent} disabled={addingDependent || !dependentName.trim()} className="w-full">
                   {addingDependent ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Perfil'}
                 </Button>
               </div>

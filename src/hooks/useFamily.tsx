@@ -17,7 +17,7 @@ interface FamilyContextType {
     dismissPanicAlert: () => void;
     realtimeConnected: boolean;
     refreshFamily: () => Promise<void>;
-    addDependent: (fullName: string) => Promise<any>;
+    addDependent: (fullName: string, birthDate?: string, relationship?: string) => Promise<any>;
 }
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
@@ -136,13 +136,15 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const isCaregiverMode = !!selectedPatient;
 
-    const addDependent = async (fullName: string) => {
+    const addDependent = async (fullName: string, birthDate?: string, relationship?: string) => {
         if (!user) return null;
         try {
-            console.log('👶 Criando dependente:', fullName);
+            console.log('👶 Criando dependente:', fullName, birthDate, relationship);
             const { data, error } = await supabase.rpc('create_managed_profile', {
                 profile_name: fullName,
-                manager_id: user.id
+                manager_id: user.id,
+                profile_birth_date: birthDate || null,
+                profile_relationship: relationship || null
             });
 
             if (error) throw error;
