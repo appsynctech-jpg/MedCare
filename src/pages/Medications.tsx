@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Pill, Plus, AlertTriangle, Clock, Loader2, Camera, Image, X, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Pill, Plus, AlertTriangle, Clock, Loader2, Camera, Image, X, CheckCircle, AlertCircle, XCircle, Calendar } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -263,8 +263,23 @@ export default function Medications() {
   );
 
   const getDaysLeft = (med: Medication) => {
+    if (med.form === 'xarope' || med.form === 'gotas' || med.form === 'injecao') return Infinity;
     if (!med.daily_frequency) return Infinity;
     return Math.floor(med.stock_quantity / med.daily_frequency);
+  };
+
+  const getTreatmentDaysLeft = (med: Medication) => {
+    if (!med.end_date) return null;
+    const end = new Date(med.end_date);
+    const now = new Date();
+    end.setHours(23, 59, 59, 999); // End of the end date
+    now.setHours(0, 0, 0, 0); // Start of today
+
+    if (end < now) return 0;
+
+    const diffTime = end.getTime() - now.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
@@ -370,10 +385,12 @@ export default function Medications() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Estoque (unidades)</Label>
-                  <Input type="number" min={0} value={stock} onChange={(e) => setStock(Number(e.target.value))} />
-                </div>
+                {(form !== 'xarope' && form !== 'gotas' && form !== 'injecao') && (
+                  <div className="space-y-2">
+                    <Label>Estoque (unidades)</Label>
+                    <Input type="number" min={0} value={stock} onChange={(e) => setStock(Number(e.target.value))} />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>Início do Tratamento</Label>
                   <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -527,10 +544,16 @@ export default function Medications() {
                           <span>{med.medication_schedules.map((s) => s.time.slice(0, 5)).join(', ')}</span>
                         </div>
                       )}
-                      {daysLeft <= 7 && med.active && (
+                      {daysLeft <= 7 && med.active && daysLeft !== Infinity && (
                         <div className={`flex items-center gap-2 text-sm ${daysLeft <= 3 ? 'text-destructive' : 'text-orange-500'}`}>
                           <AlertTriangle className="h-4 w-4" />
                           <span>{daysLeft <= 3 ? 'URGENTE: ' : ''}Restam {daysLeft} dias</span>
+                        </div>
+                      )}
+                      {getTreatmentDaysLeft(med) !== null && med.active && (
+                        <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400">
+                          <Calendar className="h-4 w-4" />
+                          <span>Faltam {getTreatmentDaysLeft(med)} dias de tratamento</span>
                         </div>
                       )}
                     </CardContent>
