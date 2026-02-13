@@ -15,6 +15,8 @@ import { ShareModal } from '@/components/sharing/ShareModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Profile, EmergencyContact, SharedAccess, CaregiverRelationship } from '@/types';
+import { useSubscription } from '@/hooks/useSubscription';
+import { PaywallModal } from '@/components/subscription/PaywallModal';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -59,6 +61,9 @@ export default function Settings() {
   const [dependentBirthDate, setDependentBirthDate] = useState('');
   const [dependentRelationship, setDependentRelationship] = useState('');
   const [addingDependent, setAddingDependent] = useState(false);
+  const { canAddDependent, canAddEmergencyContact, limits } = useSubscription();
+  const [paywallOpen, setPaywallOpen] = useState(false);
+  const [paywallFeature, setPaywallFeature] = useState<'dependent' | 'emergency_contact'>('dependent');
 
   useEffect(() => {
     if (!user) return;
@@ -136,6 +141,15 @@ export default function Settings() {
 
   const addContact = async () => {
     if (!user || !newContactName || !newContactPhone) return;
+
+    // Check subscription limits
+    const canAdd = await canAddEmergencyContact();
+    if (!canAdd) {
+      setPaywallFeature('emergency_contact');
+      setPaywallOpen(true);
+      return;
+    }
+
     await supabase.from('emergency_contacts').insert({
       user_id: user.id, name: newContactName, relationship: newContactRelation || 'Outro',
       phone: newContactPhone, email: newContactEmail || null, priority: contacts.length + 1,
@@ -160,6 +174,14 @@ export default function Settings() {
 
   const handleAddDependent = async () => {
     if (!dependentName.trim()) return;
+
+    // Check subscription limits
+    const canAdd = await canAddDependent();
+    if (!canAdd) {
+      setPaywallFeature('dependent');
+      setPaywallOpen(true);
+      return;
+    }
 
     try {
       setAddingDependent(true);
@@ -558,7 +580,16 @@ export default function Settings() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg flex items-center gap-2"><Share2 className="h-5 w-5" /> Compartilhamentos</CardTitle>
-                <ShareModal />
+                {limits.canShare ? (
+                  <ShareModal />
+                ) : (
+                  <Button variant="outline" size="sm" onClick={() => {
+                    setPaywallFeature('share' as any);
+                    setPaywallOpen(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-2" /> Compartilhar (Pro)
+                  </Button>
+                )}
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -608,6 +639,14 @@ export default function Settings() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <PaywallModal
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        feature={paywallFeature}
+        currentCount={paywallFeature === 'dependent' ? relationships.length : contacts.length}
+        limit={paywallFeature === 'dependent' ? limits.dependents : limits.emergencyContacts}
+      />
     </div>
   );
 }

@@ -20,9 +20,13 @@ const Documents = lazy(() => import("./pages/Documents"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Doctors = lazy(() => import("./pages/Doctors"));
 const Help = lazy(() => import("./pages/Help"));
+const Pricing = lazy(() => import("./pages/Pricing"));
 const SharedView = lazy(() => import("./pages/SharedView"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const LandingPageEditor = lazy(() => import("./pages/admin/LandingPageEditor"));
+import { AdminRoute } from "@/components/admin/AdminRoute";
 
 const queryClient = new QueryClient();
 
@@ -47,7 +51,8 @@ const App = () => (
             <BrowserRouter>
               <Suspense fallback={<Loading />}>
                 <Routes>
-                  <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/" element={<LandingPage />} />
+                  <Route path="/pricing" element={<Pricing />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -59,6 +64,15 @@ const App = () => (
                     <Route path="/documents" element={<Documents />} />
                     <Route path="/settings" element={<Settings />} />
                     <Route path="/help" element={<Help />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route
+                      path="/admin/landing"
+                      element={
+                        <AdminRoute>
+                          <LandingPageEditor />
+                        </AdminRoute>
+                      }
+                    />
                   </Route>
                   <Route path="/shared/:token" element={<SharedView />} />
                   <Route path="*" element={<NotFound />} />

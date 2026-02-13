@@ -28,6 +28,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
+import { PaywallModal } from '@/components/subscription/PaywallModal';
 
 type MedWithSchedules = Medication & { medication_schedules: MedicationSchedule[] };
 
@@ -46,8 +48,10 @@ export default function Medications() {
   const targetUserId = selectedPatient?.id || user?.id;
   const { toast } = useToast();
   const { meds, todayLogs, refreshData } = useAlarm();
+  const { canAddMedication, limits } = useSubscription();
   const [loading, setLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [paywallOpen, setPaywallOpen] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailMed, setDetailMed] = useState<MedWithSchedules | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -134,6 +138,17 @@ export default function Medications() {
       toast({ variant: 'destructive', title: 'Preencha nome e dosagem' });
       return;
     }
+
+    // Check subscription limits for new medications
+    if (!isEditing && targetUserId) {
+      const canAdd = await canAddMedication(targetUserId);
+      if (!canAdd) {
+        setDialogOpen(false);
+        setPaywallOpen(true);
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       let photoUrl = photoPreview;

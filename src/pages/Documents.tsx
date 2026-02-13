@@ -10,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useFamily } from '@/hooks/useFamily';
 import type { MedicalDocument } from '@/types';
+import { useSubscription } from '@/hooks/useSubscription';
+import { PaywallModal } from '@/components/subscription/PaywallModal';
+import { AlertCircle } from 'lucide-react';
 
 interface DocWithAppt extends MedicalDocument {
   appointments?: {
@@ -39,6 +42,8 @@ export default function Documents() {
   const [uploading, setUploading] = useState(false);
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const { canAddDocument, limits, isPro } = useSubscription();
+  const [paywallOpen, setPaywallOpen] = useState(false);
 
   const fetchDocs = useCallback(async () => {
     if (!targetUserId) return;
@@ -56,7 +61,14 @@ export default function Documents() {
   const handleUpload = async (files: FileList | null) => {
     if (!files || !targetUserId) return;
     const allowed = ['application/pdf', 'image/jpeg', 'image/png'];
-    const maxSize = 10 * 1024 * 1024;
+    const maxSize = limits.documentSizeMB * 1024 * 1024;
+
+    // Check limit
+    const canAdd = await canAddDocument();
+    if (!canAdd) {
+      setPaywallOpen(true);
+      return;
+    }
 
     setUploading(true);
     try {
@@ -120,7 +132,12 @@ export default function Documents() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Documentos Médicos</h1>
-        <p className="text-muted-foreground">Armazene e organize seus documentos</p>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <p>Armazene e organize seus documentos</p>
+          <Badge variant="outline" className="text-xs">
+            Retenção: {limits.documentRetentionDays === 180 ? '6 meses' : '24 meses'}
+          </Badge>
+        </div>
       </div>
 
       {/* Upload Zone */}
@@ -128,7 +145,7 @@ export default function Documents() {
         <CardContent className="flex flex-col items-center justify-center p-8">
           <Upload className="h-10 w-10 text-muted-foreground mb-3" />
           <p className="text-muted-foreground mb-3">Arraste arquivos ou clique para selecionar</p>
-          <p className="text-xs text-muted-foreground mb-4">PDF, JPG, PNG - Máximo 10MB por arquivo</p>
+          <p className="text-xs text-muted-foreground mb-4">PDF, JPG, PNG - Máximo {limits.documentSizeMB}MB por arquivo</p>
           <Button variant="outline" disabled={uploading} onClick={() => document.getElementById('file-upload')?.click()}>
             {uploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
             Selecionar Arquivos
@@ -210,6 +227,13 @@ export default function Documents() {
           ))}
         </div>
       )}
+      <PaywallModal
+        open={paywallOpen}
+        onOpenChange={setPaywallOpen}
+        feature="document"
+        currentCount={docs.length}
+        limit={limits.documents}
+      />
     </div>
   );
 }
