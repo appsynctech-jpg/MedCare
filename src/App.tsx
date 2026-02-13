@@ -19,6 +19,7 @@ const Appointments = lazy(() => import("./pages/Appointments"));
 const Documents = lazy(() => import("./pages/Documents"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Doctors = lazy(() => import("./pages/Doctors"));
+const Help = lazy(() => import("./pages/Help"));
 const SharedView = lazy(() => import("./pages/SharedView"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -57,6 +58,7 @@ const App = () => (
                     <Route path="/doctors" element={<Doctors />} />
                     <Route path="/documents" element={<Documents />} />
                     <Route path="/settings" element={<Settings />} />
+                    <Route path="/help" element={<Help />} />
                   </Route>
                   <Route path="/shared/:token" element={<SharedView />} />
                   <Route path="*" element={<NotFound />} />

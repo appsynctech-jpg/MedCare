@@ -130,6 +130,14 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Ajuda" isActive={location.pathname === '/help'}>
+                  <NavLink to="/help">
+                    <ShieldCheck className="mr-2 h-4 w-4" />
+                    <span>Ajuda</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
 
