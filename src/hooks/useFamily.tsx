@@ -65,11 +65,10 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     useEffect(() => {
         if (!user) return;
 
-        // Listen for panic logs from ANY patient I am a caregiver for
-        console.log('🏗️ Iniciando subscrição Realtime para usuário:', user.id, '(Tentativa:', retryCount + 1, ')');
+        // Use a persistent channel name for the user
+        const channelId = `panic_alerts_${user.id}`;
 
-        // Use a unique channel name per subscription attempt to avoid clashes during HMR
-        const channelId = `family_panic_alerts_${user.id}_${Date.now()}`;
+        console.log('🏗️ Iniciando subscrição Realtime:', channelId);
 
         const channel = supabase
             .channel(channelId)
@@ -102,7 +101,6 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                         // Native Notification (Mobile) - High Priority
                         if (Capacitor.isNativePlatform()) {
                             const sendNative = async () => {
-                                // Create high-importance channel for Android
                                 await LocalNotifications.createChannel({
                                     id: 'sos-alerts',
                                     name: 'Alertas de Emergência',
@@ -121,7 +119,6 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                                             schedule: { at: new Date(Date.now() + 500) },
                                             sound: 'resource://raw/emergency_siren',
                                             channelId: 'sos-alerts',
-                                            extra: { type: 'panic' },
                                             smallIcon: 'ic_stat_name',
                                         }
                                     ]
@@ -129,24 +126,21 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                             };
                             sendNative();
                         }
-                    } else {
-                        console.warn('⚠️ Alerta ignorado: Usuário', newPanic.user_id, 'não encontrado na lista de monitorados.');
                     }
                 }
             )
             .subscribe((status) => {
-                console.log('📡 Status da subscrição Realtime:', status);
+                console.log(`📡 [${channelId}] Status:`, status);
 
                 if (status === 'SUBSCRIBED') {
                     setRealtimeConnected(true);
-                    setRetryCount(0); // Reset retry count on success
+                    setRetryCount(0);
                 } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
                     setRealtimeConnected(false);
-                    console.error('❌ Erro de conexão no canal Realtime:', status);
+                    console.error(`❌ Erro no canal ${channelId}:`, status);
 
-                    // Only retry if we have user
-                    if (user) {
-                        const timeout = Math.min(1000 * Math.pow(2, retryCount), 30000); // Exponential backoff
+                    if (user && retryCount < 10) {
+                        const timeout = Math.min(2000 * Math.pow(1.5, retryCount), 15000);
                         setTimeout(() => {
                             setRetryCount(prev => prev + 1);
                         }, timeout);
@@ -155,10 +149,8 @@ export const FamilyProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
 
         return () => {
-            if (channel) {
-                console.log('🧹 Limpando canal Realtime:', channelId);
-                supabase.removeChannel(channel);
-            }
+            console.log('🧹 Desconectando canal:', channelId);
+            supabase.removeChannel(channel);
         };
     }, [user?.id, retryCount]);
 
