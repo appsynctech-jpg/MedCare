@@ -172,6 +172,16 @@ export default function Settings() {
     toast({ title: 'Compartilhamento revogado' });
   };
 
+  const deleteShare = async (id: string) => {
+    const { error } = await supabase.from('shared_access').delete().eq('id', id);
+    if (error) {
+      toast({ variant: 'destructive', title: 'Erro ao excluir', description: error.message });
+      return;
+    }
+    setShares(shares.filter((s) => s.id !== id));
+    toast({ title: 'Compartilhamento excluído permanentemente' });
+  };
+
   const handleAddDependent = async () => {
     if (!dependentName.trim()) return;
 
@@ -627,6 +637,11 @@ export default function Settings() {
                           {!s.revoked && !expired && (
                             <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => revokeShare(s.id)}>
                               <XCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {(s.revoked || expired) && (
+                            <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => deleteShare(s.id)}>
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           )}
                         </div>
