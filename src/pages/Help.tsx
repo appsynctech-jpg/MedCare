@@ -9,7 +9,8 @@ import {
     ChevronRight,
     Search,
     CheckCircle2,
-    Calendar
+    Calendar,
+    ShieldCheck
 } from 'lucide-react';
 
 const guides = [
@@ -51,6 +52,19 @@ const guides = [
             'Em caso de emergência, mantenha o botão pressionado por alguns segundos.',
             'O sistema enviará automaticamente um alerta para seus contatos de emergência cadastrados.',
             'A mensagem incluirá sua localização atual em tempo real para facilitar o socorro.'
+        ]
+    },
+    {
+        id: 'monitoring',
+        title: 'Como Receber Alertas',
+        icon: ShieldCheck,
+        color: 'text-indigo-400',
+        steps: [
+            'Para que um familiar receba seus alertas de pânico com notificação em tempo real, ele obrigatoriamente precisa ter o MedCare instalado no celular dele.',
+            'Você deve enviar um convite para ele em "Configurações" > "Família" usando o e-mail que ele cadastrou no app.',
+            'O familiar precisa aceitar o convite no painel dele para validar o vínculo de monitoramento.',
+            'Certifique-se de que ele autorizou as "Notificações" nas configurações do celular para que os alertas apareçam mesmo com o app fechado.',
+            'Uma vez aceito, ele passará a receber um som de sirene imediato sempre que você acionar o pânico.'
         ]
     },
     {
