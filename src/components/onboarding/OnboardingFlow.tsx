@@ -89,8 +89,8 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
-            <Card className="w-full max-w-md shadow-2xl border-primary/20">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4 pointer-events-auto" onPointerDown={(e) => e.stopPropagation()}>
+            <Card className="w-full max-w-md shadow-2xl border-primary/20 pointer-events-auto">
                 <div className="h-1.5 w-full bg-muted overflow-hidden rounded-t-lg">
                     <div
                         className="h-full bg-primary transition-all duration-500 ease-in-out"
@@ -117,7 +117,11 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
                             </div>
                         </CardContent>
                         <CardFooter className="p-0 pt-8">
-                            <Button className="w-full group" onClick={nextStep}>
+                            <Button type="button" className="w-full group pointer-events-auto relative z-10" onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                nextStep();
+                            }}>
                                 Começar <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </Button>
                         </CardFooter>
