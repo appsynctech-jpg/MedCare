@@ -133,6 +133,7 @@ export interface CaregiverRelationship {
   id: string;
   patient_id: string;
   caregiver_id: string;
+  relationship?: string;
   status: 'pending' | 'accepted' | 'rejected';
   permissions: {
     medications: boolean;

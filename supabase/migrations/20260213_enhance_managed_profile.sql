@@ -1,4 +1,8 @@
+-- Adicionar coluna relationship se não existir
+ALTER TABLE public.caregiver_relationships ADD COLUMN IF NOT EXISTS relationship TEXT;
+
 -- Enhance create_managed_profile to accept birth_date and relationship
+
 CREATE OR REPLACE FUNCTION public.create_managed_profile(
   profile_name TEXT,
   manager_id UUID,
@@ -22,7 +26,9 @@ BEGIN
   
   -- Create the caregiver relationship
   INSERT INTO public.caregiver_relationships (caregiver_id, patient_id, relationship, status)
-  VALUES (manager_id, new_profile_id, COALESCE(profile_relationship, 'Dependente'), 'accepted');
+  VALUES (manager_id, new_profile_id, COALESCE(profile_relationship, 'Dependente'), 'accepted')
+  ON CONFLICT (patient_id, caregiver_id) 
+  DO UPDATE SET relationship = EXCLUDED.relationship;
   
   RETURN new_profile_id;
 END;

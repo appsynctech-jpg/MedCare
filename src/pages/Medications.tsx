@@ -389,13 +389,19 @@ export default function Medications() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-10 border-dashed border-2 hover:border-primary hover:text-primary transition-all rounded-xl col-span-2"
+                    disabled={schedules.length >= 6}
+                    className="h-10 border-dashed border-2 hover:border-primary hover:text-primary transition-all rounded-xl col-span-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     onClick={() => {
+                      if (schedules.length >= 6) {
+                        toast({ variant: 'destructive', title: 'Limite atingido', description: 'O máximo permitido são 6 horários por medicamento.' });
+                        return;
+                      }
                       setSchedules([...schedules, '08:00']);
                       setFrequency(schedules.length + 1);
                     }}
                   >
-                    <Plus className="h-4 w-4 mr-2" /> Adicionar Horário
+                    <Plus className="h-4 w-4 mr-2" />
+                    {schedules.length >= 6 ? 'Limite de horários atingido' : 'Adicionar Horário'}
                   </Button>
                 </div>
               </div>
