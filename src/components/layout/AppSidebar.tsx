@@ -1,4 +1,4 @@
-import { LayoutDashboard, Pill, CalendarDays, FileText, Settings, LogOut, Stethoscope, ShieldCheck, ShieldAlert, Lock } from 'lucide-react';
+import { LayoutDashboard, Pill, CalendarDays, FileText, Settings, LogOut, Stethoscope, ShieldCheck, ShieldAlert, Lock, CircleHelp } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -37,6 +37,7 @@ const navItems = [
   { title: 'Médicos', url: '/doctors', icon: Stethoscope },
   { title: 'Documentos', url: '/documents', icon: FileText },
   { title: 'Configurações', url: '/settings', icon: Settings },
+  { title: 'Ajuda', url: '/help', icon: CircleHelp },
 ];
 
 export function AppSidebar() {
