@@ -78,7 +78,8 @@ serve(async (req) => {
     }
 
     console.log('Share inserted successfully:', data.id)
-    const responseBody = { share: data, link: `${req.headers.get('origin') || ''}/shared/${access_token}` }
+    const baseUrl = Deno.env.get('BASE_URL') || req.headers.get('origin') || '';
+    const responseBody = { share: data, link: `${baseUrl}/shared/${access_token}` }
     console.log('Returning response:', JSON.stringify(responseBody))
 
     return new Response(JSON.stringify(responseBody), {

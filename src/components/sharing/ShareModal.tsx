@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Share2, Copy, Loader2, Check, Trash2, Link as LinkIcon } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { APP_BASE_URL } from '@/config';
 
 interface ShareModalProps {
   trigger?: React.ReactNode;
@@ -223,7 +224,7 @@ export function ShareModal({ trigger, profileId, profileName }: ShareModalProps)
                       </div>
                       <div className="flex gap-1">
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/shared/${link.access_token}`);
+                          navigator.clipboard.writeText(`${APP_BASE_URL}/shared/${link.access_token}`);
                           toast({ title: 'Link copiado!' });
                         }}>
                           <Copy className="h-4 w-4" />
