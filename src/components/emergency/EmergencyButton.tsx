@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { usePanic } from '@/hooks/usePanic';
 
@@ -49,6 +49,9 @@ export function EmergencyButton() {
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-sm text-center border-destructive">
           <DialogTitle className="sr-only">Emergência</DialogTitle>
+          <DialogDescription className="sr-only">
+            Confirme o acionamento do botão de pânico ou cancele a contagem regressiva.
+          </DialogDescription>
           {!triggered ? (
             <div className="space-y-6 py-4">
               <AlertTriangle className="mx-auto h-16 w-16 text-destructive animate-bounce" />

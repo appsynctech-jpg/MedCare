@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Phone, Mail, MapPin, User, Trash2, Edit2, Search } from 'lucide-react';
 import type { Doctor } from '@/types';
+import { formatPhone } from '@/lib/utils';
 
 export default function Doctors() {
     const { user } = useAuth();
@@ -150,6 +151,9 @@ export default function Doctors() {
                     <DialogContent className="sm:max-w-[500px]">
                         <DialogHeader>
                             <DialogTitle>{editingDoctor ? 'Editar Médico' : 'Novo Médico'}</DialogTitle>
+                            <DialogDescription>
+                                {editingDoctor ? 'Atualize as informações do médico abaixo.' : 'Preencha os dados para cadastrar um novo médico.'}
+                            </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSave} className="space-y-4 pt-4">
                             <div className="grid grid-cols-2 gap-4">
@@ -167,7 +171,7 @@ export default function Doctors() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="phone">Telefone</Label>
-                                    <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+                                    <Input id="phone" value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="email">E-mail</Label>

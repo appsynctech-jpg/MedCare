@@ -26,6 +26,8 @@ const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const LandingPageEditor = lazy(() => import("./pages/admin/LandingPageEditor"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const SystemSettings = lazy(() => import("./pages/admin/SystemSettings"));
 import { AdminRoute } from "@/components/admin/AdminRoute";
 
 const queryClient = new QueryClient();
@@ -66,7 +68,27 @@ const App = () => (
                     <Route path="/help" element={<Help />} />
                     <Route path="/pricing" element={<Pricing />} />
                     <Route
-                      path="/admin/landing"
+                      path="/admin"
+                      element={<Navigate to="/admin/dashboard" replace />}
+                    />
+                    <Route
+                      path="/admin/dashboard"
+                      element={
+                        <AdminRoute>
+                          <AdminDashboard />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/system"
+                      element={
+                        <AdminRoute>
+                          <SystemSettings />
+                        </AdminRoute>
+                      }
+                    />
+                    <Route
+                      path="/admin/cms"
                       element={
                         <AdminRoute>
                           <LandingPageEditor />

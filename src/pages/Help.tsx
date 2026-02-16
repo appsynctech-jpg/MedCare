@@ -10,7 +10,8 @@ import {
     Search,
     CheckCircle2,
     Calendar,
-    ShieldCheck
+    ShieldCheck,
+    Stethoscope
 } from 'lucide-react';
 
 const guides = [
@@ -77,6 +78,19 @@ const guides = [
             'Clique no botão "Adicionar Dependente" ou "Novo Perfil".',
             'Insira as informações básicas: Nome completo, Data de Nascimento e relação de parentesco.',
             'Após salvar, você poderá alternar entre os perfis no menu lateral para gerenciar os medicamentos de cada um individualmente.'
+        ]
+    },
+    {
+        id: 'doctors',
+        title: 'Gerenciar Médicos',
+        icon: Stethoscope,
+        color: 'text-cyan-400',
+        steps: [
+            'Existem duas formas de cadastrar: Completa ou Rápida.',
+            'Cadastro Completo: Vá em "Médicos" > "Adicionar Médico". Aqui você salva todas as informações (telefone, endereço, etc).',
+            'Cadastro Rápido: Ao agendar uma "Nova Consulta", se você digitar um nome de médico que não existe, ele será criado automaticamente.',
+            'Atenção: O cadastro rápido salva apenas o Nome e Especialidade.',
+            'Para completar o cadastro (adicionar telefone/endereço) de um médico criado rapidamente, vá até a aba "Médicos" e clique no ícone de editar.'
         ]
     }
 ];

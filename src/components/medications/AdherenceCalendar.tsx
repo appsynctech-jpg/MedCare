@@ -67,11 +67,6 @@ export function AdherenceCalendar({ userId, externalLogs }: { userId?: string, e
             <CardHeader>
                 <CardTitle className="text-lg flex items-center justify-between">
                     <span>Calendário de Adesão</span>
-                    <div className="flex gap-2 text-xs font-normal">
-                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[hsl(var(--success))]" /> Tudo Ok</div>
-                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[hsl(var(--destructive))]" /> Pendente</div>
-                        <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[hsl(var(--warning))]" /> Parcial</div>
-                    </div>
                 </CardTitle>
             </CardHeader>
             <CardContent>
@@ -88,6 +83,11 @@ export function AdherenceCalendar({ userId, externalLogs }: { userId?: string, e
                                 modifiersStyles={modifiersStyles}
                                 className="rounded-md"
                             />
+                            <div className="flex flex-wrap gap-3 text-xs font-normal justify-center pt-4 border-t mt-2">
+                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[hsl(var(--success))]" /> Tudo Ok</div>
+                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[hsl(var(--destructive))]" /> Pendente</div>
+                                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-[hsl(var(--warning))]" /> Parcial</div>
+                            </div>
                         </div>
 
                         <div className="flex-1 space-y-4">

@@ -1,0 +1,159 @@
+# Guia de Implementação: Google Gemini AI
+
+Este documento detalha como a integração com a IA do Google Gemini foi feita neste projeto ("Sync-finance-flow"), para que você possa replicá-la em outros projetos.
+
+## 1. Visão Geral
+A implementação atual utiliza a **API REST direta** do Google Generative AI (v1beta), o que permite maior controle e flexibilidade, embora a biblioteca oficial `@google/generative-ai` esteja listada nas dependências.
+
+A solução é composta por:
+1.  **Serviço Gemini ([gemini.js](file:///c:/Projetos/Sync-finance-flow/ai-server/gemini.js))**: Responsável por montar o prompt, chamar a API e tratar a resposta.
+2.  **Processador de Mensagens ([messageProcessor.js](file:///c:/Projetos/Sync-finance-flow/ai-server/messageProcessor.js))**: Orquestra o fluxo (recebe mensagem -> busca contexto -> chama AI -> salva no banco).
+
+## 2. Pré-requisitos
+
+### Variáveis de Ambiente
+Você precisará de uma chave de API do Google AI Studio.
+No arquivo [.env](file:///c:/Projetos/Sync-finance-flow/ai-server/.env):
+
+```env
+GEMINI_API_KEY=sua_chave_aqui_xyz
+# ou
+VITE_GEMINI_API_KEY=sua_chave_aqui_xyz
+```
+
+## 3. Estrutura de Arquivos Recomendada
+
+```
+/seuprujeto
+  /ai-server (ou /services)
+    gemini.js          # Lógica de conexão com a IA
+    messageProcessor.js # Lógica de negócio e fluxo
+```
+
+## 4. Implementação Passo a Passo
+
+### Passo 1: Serviço Gemini ([gemini.js](file:///c:/Projetos/Sync-finance-flow/ai-server/gemini.js))
+
+Este é o coração da integração. Ele define o "System Prompt" (personalidade e regras) e gerencia a conexão.
+
+**Pontos Chave:**
+*   **System Prompt:** Define claramente que a IA deve responder **apenas JSON**.
+*   **Fallback de Modelos:** Tenta usar o modelo mais novo (`gemini-2.5-flash`), se falhar, tenta versões anteriores (`1.5-flash`, [pro](file:///c:/Projetos/Sync-finance-flow/ai-server/gemini.js#34-98)).
+*   **Limpeza de Resposta:** Remove blocos de código markdown (```json ... ```) antes de fazer o parse.
+
+```javascript
+import dotenv from 'dotenv';
+dotenv.config();
+
+// 1. Definição do Prompt do Sistema
+const SYSTEM_PROMPT = `Você é um assistente especializado.
+Sua missão é analisar mensagens e convertê-las em dados estruturados (JSON).
+
+SEMPRE responda APENAS com um JSON válido, sem markdown.
+
+Estrutura do JSON esperado:
+{
+  "campo1": "valor",
+  "campo2": "valor"
+  // ... defina seus campos aqui
+}
+`;
+
+export async function processMessageWithGemini(message, context = {}) {
+  // 2. Obtenção da Chave
+  const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) return { error: '🤖 GEMINI_API_KEY não configurada.' };
+
+  // 3. Modelos para tentar (em ordem de preferência)
+  const modelsToTry = ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-pro"];
+  let lastError = null;
+
+  for (const modelName of modelsToTry) {
+    try {
+      console.log(`🤖 [FETCH] Tentando modelo: ${modelName}`);
+
+      // 4. Montagem do Prompt com Contexto
+      // Injetar dados dinâmicos ajuda a IA a ser mais precisa
+      const prompt = `${SYSTEM_PROMPT}
+      
+CONTEXTO:
+${JSON.stringify(context, null, 2)}
+
+MENSAGEM DO USUÁRIO: "${message}"`;
+
+      // 5. Chamada Direta via Fetch (REST API v1beta)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }]
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(`API Error ${response.status}: ${data.error?.message || response.statusText}`);
+      }
+
+      // 6. Extração e Limpeza da Resposta
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) throw new Error('Resposta vazia da IA');
+
+      // Remove formatação de código se houver (```json ... ```)
+      const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      
+      return JSON.parse(jsonStr);
+
+    } catch (error) {
+      lastError = error;
+      console.warn(`⚠️ [FETCH] Modelo ${modelName} falhou:`, error.message);
+      // O loop continua para o próximo modelo
+    }
+  }
+
+  return { error: 'Desculpe, erro ao conectar com a inteligência.' };
+}
+```
+
+### Passo 2: Uso no Fluxo ([messageProcessor.js](file:///c:/Projetos/Sync-finance-flow/ai-server/messageProcessor.js))
+
+Como utilizar a função criada acima dentro da lógica do seu aplicativo.
+
+```javascript
+import { processMessageWithGemini } from './gemini.js';
+
+export async function handleIncomingMessage(userMessage) {
+  try {
+    // 1. Prepare o contexto (dados do banco, status atual, etc)
+    const context = {
+      userStatus: 'active',
+      lastAction: 'login'
+    };
+
+    // 2. Chame a IA
+    const aiResult = await processMessageWithGemini(userMessage, context);
+
+    // 3. Valide o resultado
+    if (aiResult.error) {
+      console.error(aiResult.error);
+      return;
+    }
+
+    // 4. Use o JSON retornado
+    console.log("Dados extraídos:", aiResult);
+    // Ex: salvar no banco, responder ao usuário, etc.
+
+  } catch (error) {
+    console.error("Erro no processamento:", error);
+  }
+}
+```
+
+## 5. Dicas Importantes deste Projeto
+
+1.  **JSON Mode**: Embora a API do Gemini tenha um modo JSON nativo, neste projeto optou-se por instruir via prompt ("SEMPRE responda APENAS com um JSON") e limpar a string manualmente (`text.replace...`). Isso provou ser muito robusto para modelos Flash.
+2.  **Contexto é Rei**: Observe em [gemini.js](file:///c:/Projetos/Sync-finance-flow/ai-server/gemini.js) (linha 45-48 do arquivo original) como listas de categorias, contas e cartões são passadas no prompt. Isso permite que a IA "conheça" o banco de dados do usuário e categorize corretamente sem alucinar nomes que não existem.
+3.  **Fallback de Modelos**: A estratégia de tentar o `2.5-flash`, depois o `1.5-flash` e por fim o [pro](file:///c:/Projetos/Sync-finance-flow/ai-server/gemini.js#34-98) garante alta disponibilidade e tenta sempre usar o modelo mais rápido/inteligente primeiro.

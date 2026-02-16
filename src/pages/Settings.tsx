@@ -10,13 +10,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useFamily } from '@/hooks/useFamily';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, Sun, Moon, Monitor, User, Share2, XCircle, RefreshCw, UserPlus } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sun, Moon, Monitor, User, Share2, XCircle, RefreshCw, UserPlus, Copy } from 'lucide-react';
 import { ShareModal } from '@/components/sharing/ShareModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import type { Profile, EmergencyContact, SharedAccess, CaregiverRelationship } from '@/types';
 import { useSubscription } from '@/hooks/useSubscription';
 import { PaywallModal } from '@/components/subscription/PaywallModal';
+import { formatPhone } from '@/lib/utils';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -291,17 +292,22 @@ export default function Settings() {
 
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Configurações</h1>
+    <div className="container mx-auto max-w-lg md:max-w-4xl w-full p-1 md:p-4 space-y-6">
+      <h1 className="text-2xl font-bold px-1">Configurações</h1>
 
       <Tabs defaultValue="profile">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="profile">Perfil</TabsTrigger>
-          <TabsTrigger value="appearance">Aparência</TabsTrigger>
-          <TabsTrigger value="emergency">Emergência</TabsTrigger>
-          <TabsTrigger value="family">Família</TabsTrigger>
-          <TabsTrigger value="sharing">Compartilhamento</TabsTrigger>
-        </TabsList>
+        {/* Outer: clips content so page never expands. Inner: allows horizontal touch scroll */}
+        <div className="w-full overflow-hidden">
+          <div className="overflow-x-auto pb-1" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <TabsList className="inline-flex w-max">
+              <TabsTrigger value="profile" className="whitespace-nowrap">Perfil</TabsTrigger>
+              <TabsTrigger value="appearance" className="whitespace-nowrap">Aparência</TabsTrigger>
+              <TabsTrigger value="emergency" className="whitespace-nowrap">Emergência</TabsTrigger>
+              <TabsTrigger value="family" className="whitespace-nowrap">Família</TabsTrigger>
+              <TabsTrigger value="sharing" className="whitespace-nowrap">Compartilhamento</TabsTrigger>
+            </TabsList>
+          </div>
+        </div>
 
         <TabsContent value="profile" className="space-y-4 mt-4">
           <Card>
@@ -332,7 +338,7 @@ export default function Settings() {
                     </div>
                     <div className="space-y-2">
                       <Label>Telefone</Label>
-                      <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="(00) 00000-0000" />
+                      <Input value={phone} onChange={(e) => setPhone(formatPhone(e.target.value))} placeholder="(00) 00000-0000" maxLength={15} />
                     </div>
                     <div className="space-y-2">
                       <Label>Data de Nascimento</Label>
@@ -572,7 +578,7 @@ export default function Settings() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                       <Input placeholder="Nome" value={newContactName} onChange={(e) => setNewContactName(e.target.value)} />
                       <Input placeholder="Parentesco" value={newContactRelation} onChange={(e) => setNewContactRelation(e.target.value)} />
-                      <Input placeholder="Telefone" value={newContactPhone} onChange={(e) => setNewContactPhone(e.target.value)} />
+                      <Input placeholder="Telefone" value={newContactPhone} onChange={(e) => setNewContactPhone(formatPhone(e.target.value))} maxLength={15} />
                       <Input placeholder="E-mail" type="email" value={newContactEmail} onChange={(e) => setNewContactEmail(e.target.value)} />
                     </div>
                     <Button size="sm" onClick={addContact} disabled={!newContactName || !newContactPhone}>
@@ -587,8 +593,8 @@ export default function Settings() {
 
         <TabsContent value="sharing" className="space-y-4 mt-4">
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
+            <CardHeader className="px-4 sm:px-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <CardTitle className="text-lg flex items-center gap-2"><Share2 className="h-5 w-5" /> Compartilhamentos</CardTitle>
                 {limits.canShare ? (
                   <ShareModal />
@@ -602,7 +608,7 @@ export default function Settings() {
                 )}
               </div>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-3 px-4 sm:px-6">
               {loadingShares ? (
                 <div className="space-y-3">
                   <Skeleton className="h-24 w-full" />
@@ -635,9 +641,17 @@ export default function Settings() {
                         <div className="flex items-center gap-2">
                           <Badge variant={variant as any}>{status}</Badge>
                           {!s.revoked && !expired && (
-                            <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => revokeShare(s.id)}>
-                              <XCircle className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-primary" onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/shared/${s.access_token}`);
+                                toast({ title: 'Link copiado!' });
+                              }} title="Copiar Link">
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => revokeShare(s.id)} title="Revogar acesso">
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           {(s.revoked || expired) && (
                             <Button size="icon" variant="ghost" className="text-destructive h-8 w-8" onClick={() => deleteShare(s.id)}>

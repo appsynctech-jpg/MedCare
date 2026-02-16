@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { PanicAlarmDialog } from '@/components/emergency/PanicAlarmDialog';
+import AssistantChat from '@/components/ai/AssistantChat';
 
 export function AppLayout() {
   const { user, loading: authLoading } = useAuth();
@@ -76,7 +77,7 @@ export function AppLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full">
+      <div className="flex min-h-screen w-full overflow-x-hidden">
         <AppSidebar />
         <div className={`flex flex-1 flex-col transition-colors duration-500 ${isCaregiverMode ? 'bg-indigo-50/30 dark:bg-indigo-950/10' : ''}`}>
           <AppHeader />
@@ -86,12 +87,13 @@ export function AppLayout() {
               Monitorando: {selectedPatient?.full_name}
             </div>
           )}
-          <main className="flex-1 overflow-auto p-4 md:p-6 no-scrollbar">
+          <main className="flex-1 w-full max-w-[100vw] overflow-x-hidden overflow-y-auto p-2 md:p-6 no-scrollbar">
             <Outlet />
           </main>
         </div>
       </div>
       <PanicAlarmDialog />
+      <AssistantChat />
     </SidebarProvider>
   );
 }

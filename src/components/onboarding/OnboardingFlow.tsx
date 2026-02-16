@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Sun, Moon, Monitor, ArrowRight, ArrowLeft, Check, Sparkles } from 'lucide-react';
+import { formatPhone } from '@/lib/utils';
 
 interface OnboardingFlowProps {
     userId: string;
@@ -211,7 +212,8 @@ export function OnboardingFlow({ userId, onComplete }: OnboardingFlowProps) {
                                     id="phone"
                                     placeholder="(00) 00000-0000"
                                     value={contactPhone}
-                                    onChange={(e) => setContactPhone(e.target.value)}
+                                    onChange={(e) => setContactPhone(formatPhone(e.target.value))}
+                                    maxLength={15}
                                 />
                             </div>
                         </CardContent>

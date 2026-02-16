@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -234,46 +234,57 @@ export default function Appointments() {
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
-  const renderApptCard = (apt: Appointment & { doctors?: Doctor }, isPast = false) => (
-    <Card key={apt.id} className={isPast ? 'opacity-75' : ''}>
-      <CardContent className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className={`flex h-12 w-12 items-center justify-center rounded-full ${isPast ? 'bg-muted' : 'bg-[hsl(var(--appointment))]/10'}`}>
-              <Stethoscope className={`h-6 w-6 ${isPast ? 'text-muted-foreground' : 'text-[hsl(var(--appointment))]'}`} />
+  const renderApptCard = (apt: Appointment & { doctors?: Doctor }, isPast = false) => {
+    const isMissed = isPast && apt.status === 'pending';
+    const isCancelled = apt.status === 'cancelled';
+
+    const cardStyle = isCancelled || isMissed
+      ? 'border-destructive/30 bg-destructive/5'
+      : isPast
+        ? 'bg-muted/30 border-muted opacity-70 grayscale-[0.3]'
+        : 'border-primary/30 bg-primary/5 shadow-md';
+
+    return (
+      <Card key={apt.id} className={`transition-all ${cardStyle}`}>
+        <CardContent className="p-4">
+          <div className="flex flex-col md:flex-row gap-4 justify-between md:items-center">
+            <div className="flex items-center gap-4">
+              <div className={`flex h-12 w-12 items-center justify-center rounded-full ${isPast ? 'bg-muted' : 'bg-[hsl(var(--appointment))]/10'}`}>
+                <Stethoscope className={`h-6 w-6 ${isPast ? 'text-muted-foreground' : 'text-[hsl(var(--appointment))]'}`} />
+              </div>
+              <div>
+                <p className="font-medium">{apt.doctors?.name || 'Médico não informado'}</p>
+                <p className="text-sm text-muted-foreground">{apt.doctors?.specialty}</p>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                  <CalendarDays className="h-3 w-3" />
+                  {new Date(apt.appointment_date).toLocaleDateString('pt-BR')} às{' '}
+                  {new Date(apt.appointment_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="font-medium">{apt.doctors?.name || 'Médico não informado'}</p>
-              <p className="text-sm text-muted-foreground">{apt.doctors?.specialty}</p>
-              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                <CalendarDays className="h-3 w-3" />
-                {new Date(apt.appointment_date).toLocaleDateString('pt-BR')} às{' '}
-                {new Date(apt.appointment_date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+            <div className="flex flex-col items-start md:items-end gap-2 w-full md:w-auto">
+              <div className="flex gap-2">
+                <Badge>{typeLabels[apt.type]}</Badge>
+                <Badge variant={statusVariant[apt.status]}>{statusLabels[apt.status]}</Badge>
+              </div>
+              <div className="flex flex-wrap gap-2 w-full md:justify-end">
+                <Button size="sm" variant="outline" onClick={() => openDetail(apt)} className="flex-1 md:flex-none">Detalhes</Button>
+                {!isPast && apt.status === 'pending' && (
+                  <Button size="sm" variant="outline" onClick={() => updateStatus(apt.id, 'confirmed')} className="flex-1 md:flex-none">Confirmar</Button>
+                )}
+                {!isPast && (
+                  <Button size="sm" variant="outline" onClick={() => updateStatus(apt.id, 'completed')} className="flex-1 md:flex-none">Realizada</Button>
+                )}
+                {!isPast && (
+                  <Button size="sm" variant="ghost" className="text-destructive flex-1 md:flex-none" onClick={() => updateStatus(apt.id, 'cancelled')}>Cancelar</Button>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex gap-2">
-              <Badge>{typeLabels[apt.type]}</Badge>
-              <Badge variant={statusVariant[apt.status]}>{statusLabels[apt.status]}</Badge>
-            </div>
-            <div className="flex gap-1">
-              <Button size="sm" variant="outline" onClick={() => openDetail(apt)}>Detalhes</Button>
-              {!isPast && apt.status === 'pending' && (
-                <Button size="sm" variant="outline" onClick={() => updateStatus(apt.id, 'confirmed')}>Confirmar</Button>
-              )}
-              {!isPast && (
-                <Button size="sm" variant="outline" onClick={() => updateStatus(apt.id, 'completed')}>Realizada</Button>
-              )}
-              {!isPast && (
-                <Button size="sm" variant="ghost" className="text-destructive" onClick={() => updateStatus(apt.id, 'cancelled')}>Cancelar</Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -287,7 +298,10 @@ export default function Appointments() {
             <Button><Plus className="mr-2 h-4 w-4" /> Agendar Consulta</Button>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>Nova Consulta</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>Nova Consulta</DialogTitle>
+              <DialogDescription>Preencha os dados abaixo para agendar uma nova consulta.</DialogDescription>
+            </DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label>Médico</Label>
@@ -353,8 +367,16 @@ export default function Appointments() {
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
-              modifiers={{ appointment: appointmentDates }}
-              modifiersClassNames={{ appointment: 'bg-primary/20 font-bold text-primary' }}
+              modifiers={{
+                upcoming: upcoming.map((a) => new Date(a.appointment_date)),
+                past: past.filter(a => a.status === 'completed').map((a) => new Date(a.appointment_date)),
+                cancelled: [...past.filter(a => a.status === 'pending' || a.status === 'cancelled'), ...upcoming.filter(a => a.status === 'cancelled')].map((a) => new Date(a.appointment_date))
+              }}
+              modifiersClassNames={{
+                upcoming: 'bg-primary text-primary-foreground hover:bg-primary/90',
+                past: 'bg-muted text-muted-foreground opacity-50',
+                cancelled: 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              }}
               className="rounded-md"
             />
           </CardContent>
@@ -386,6 +408,7 @@ export default function Appointments() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Detalhes da Consulta</DialogTitle>
+            <DialogDescription>Visualize e edite os detalhes da consulta, adicione notas e anexos.</DialogDescription>
           </DialogHeader>
           {detailAppt && (
             <div className="space-y-6">

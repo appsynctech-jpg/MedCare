@@ -10,16 +10,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Save, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { Switch } from '@/components/ui/switch';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function LandingPageEditor() {
     const { content, loading, updateContent, updateMultiple } = useLandingContent();
     const [saving, setSaving] = useState(false);
     const { toast } = useToast();
     const navigate = useNavigate();
-    const [autoProEnabled, setAutoProEnabled] = useState(false);
-    const [loadingSettings, setLoadingSettings] = useState(true);
 
     // Local state for form values
     const [formData, setFormData] = useState<any>({});
@@ -30,51 +26,6 @@ export default function LandingPageEditor() {
             setFormData(content);
         }
     }, [content]);
-
-    useEffect(() => {
-        const fetchSettings = async () => {
-            const { data } = await supabase
-                .from('system_settings')
-                .select('value')
-                .eq('key', 'auto_pro_enabled')
-                .single();
-
-            if (data) {
-                setAutoProEnabled(data.value.enabled || false);
-            }
-            setLoadingSettings(false);
-        };
-        fetchSettings();
-    }, []);
-
-    const handleToggleAutoPro = async (checked: boolean) => {
-        setAutoProEnabled(checked);
-        try {
-            const { error } = await supabase
-                .from('system_settings')
-                .upsert({
-                    key: 'auto_pro_enabled',
-                    value: { enabled: checked },
-                    updated_at: new Date().toISOString()
-                });
-
-            if (error) throw error;
-
-            toast({
-                title: checked ? 'Modo PRO Automático Ativado' : 'Modo PRO Automático Desativado',
-                description: checked
-                    ? 'Novos usuários serão PRO automaticamente.'
-                    : 'Novos usuários serão Free por padrão.'
-            });
-        } catch (error) {
-            setAutoProEnabled(!checked);
-            toast({
-                title: 'Erro ao atualizar configuração',
-                description: 'Não foi possível salvar a alteração.',
-                variant: 'destructive'
-            });
-        }
-    };
 
     const handleSave = async (section: string) => {
         setSaving(true);
@@ -149,7 +100,6 @@ export default function LandingPageEditor() {
                     <TabsTrigger value="elderly">Idosos</TabsTrigger>
                     <TabsTrigger value="testimonials">Depoimentos</TabsTrigger>
                     <TabsTrigger value="cta">CTA</TabsTrigger>
-                    <TabsTrigger value="system">Sistema</TabsTrigger>
                 </TabsList>
 
                 {/* Hero Section */}
@@ -639,30 +589,6 @@ export default function LandingPageEditor() {
                                     </>
                                 )}
                             </Button>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* System Settings Section */}
-                <TabsContent value="system">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Configurações do Sistema</CardTitle>
-                            <CardDescription>Configurações globais da plataforma</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="flex items-center justify-between p-4 border rounded-xl bg-muted/20">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base">Modo PRO Automático</Label>
-                                    <CardDescription>
-                                        Enquanto ativo, todos os novos usuários registrados receberão o plano PRO gratuitamente.
-                                    </CardDescription>
-                                </div>
-                                <Switch
-                                    checked={autoProEnabled}
-                                    onCheckedChange={handleToggleAutoPro}
-                                />
-                            </div>
                         </CardContent>
                     </Card>
                 </TabsContent>

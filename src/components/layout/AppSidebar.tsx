@@ -1,4 +1,4 @@
-import { LayoutDashboard, Pill, CalendarDays, FileText, Settings, LogOut, Stethoscope, ShieldCheck, ShieldAlert, Lock, CircleHelp } from 'lucide-react';
+import { LayoutDashboard, Pill, CalendarDays, FileText, Settings, LogOut, Stethoscope, ShieldCheck, ShieldAlert, Lock, CircleHelp, Settings2, FileEdit } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -148,21 +148,44 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
-
-              {/* Admin Link - Only visible to admins */}
-              {isAdmin && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/admin/landing">
-                      <Lock className="mr-2 h-4 w-4" />
-                      <span>Admin CMS</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {/* Administration Group - Only visible to admins */}
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Administração</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/dashboard">
+                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <span>Dashboard</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/system">
+                      <Settings2 className="mr-2 h-4 w-4" />
+                      <span>Sistema</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin/cms">
+                      <FileEdit className="mr-2 h-4 w-4" />
+                      <span>CMS</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {/* Pro Banner - Only show if not pro */}
         {!isPro && (

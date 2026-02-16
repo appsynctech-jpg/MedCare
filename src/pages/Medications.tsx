@@ -614,6 +614,7 @@ export default function Medications() {
                       <Pill className="h-4 w-4 text-primary" />
                     </div>
                     <DialogTitle className="text-2xl font-bold tracking-tight">{detailMed.name}</DialogTitle>
+                    <DialogDescription className="sr-only">Detalhes completos do medicamento {detailMed.name}</DialogDescription>
                   </div>
                   <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                     <span className="px-2 py-0.5 rounded-full bg-muted border text-xs">{detailMed.form}</span>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Share2, Copy, Loader2, Check } from 'lucide-react';
+import { Share2, Copy, Loader2, Check, Trash2, Link as LinkIcon } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ShareModalProps {
   trigger?: React.ReactNode;
@@ -65,6 +66,54 @@ export function ShareModal({ trigger, profileId, profileName }: ShareModalProps)
     } finally {
       setLoading(false);
     }
+  };
+
+  const [activeLinks, setActiveLinks] = useState<any[]>([]);
+  const { user } = useAuth(); // Assuming useAuth is available or use supabase.auth.getUser()
+
+  const fetchActiveLinks = async () => {
+    if (!open) return;
+    try {
+      // Get current user if profileId not provided? Or assume profileId is the target.
+      // If profileId is passed, we filter by it. If not, maybe we should filter by user's own profile?
+      // Actually the cloud function uses profile_id provided in body.
+      // Let's assume we want to show links for the profile we are visually in context of.
+
+      let query = supabase
+        .from('shared_access')
+        .select('*')
+        .eq('revoked', false)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+
+      if (profileId) {
+        query = query.eq('profile_id', profileId);
+      } else {
+        // If no specific profileId is passed, maybe it means "this user".
+        // But shared_access has a profile_id column.
+        // We should probably rely on what the parent passes.
+        // If profileId is undefined, the previous code sent undefined to the function.
+        // Let's check if there's a fallback in the function.
+        // For now, let's play safe and ONLY fetch if we have a profileId OR fallback to user.id if we can.
+        const targetId = profileId || (await supabase.auth.getUser()).data.user?.id;
+        if (targetId) query = query.eq('profile_id', targetId);
+      }
+
+      const { data } = await query;
+      if (data) setActiveLinks(data);
+    } catch (err) {
+      console.error("Error fetching links", err);
+    }
+  };
+
+  useEffect(() => {
+    if (open) fetchActiveLinks();
+  }, [open, profileId]);
+
+  const revokeLink = async (id: string) => {
+    await supabase.from('shared_access').update({ revoked: true }).eq('id', id);
+    toast({ title: 'Link revogado com sucesso.' });
+    fetchActiveLinks();
   };
 
   const copyLink = () => {
@@ -161,6 +210,33 @@ export function ShareModal({ trigger, profileId, profileName }: ShareModalProps)
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Gerar Link de Compartilhamento
             </Button>
+
+            {activeLinks.length > 0 && (
+              <div className="pt-4 mt-4 border-t border-border">
+                <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Links Ativos</Label>
+                <div className="space-y-2 max-h-[150px] overflow-y-auto pr-1">
+                  {activeLinks.map((link) => (
+                    <div key={link.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50 border border-border text-sm">
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="font-medium truncate max-w-[150px]">{link.shared_with_email}</span>
+                        <span className="text-xs text-muted-foreground">Expira em {new Date(link.expires_at).toLocaleDateString('pt-BR')}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground" onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/shared/${link.access_token}`);
+                          toast({ title: 'Link copiado!' });
+                        }}>
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => revokeLink(link.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </DialogContent>
